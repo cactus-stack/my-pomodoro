@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#162746"/>
+      <stop offset="1" stop-color="#080d17"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="305" cy="315" r="165" fill="none" stroke="#253552" stroke-width="24"/>
+  <path d="M305 150a165 165 0 0 1 157 216" fill="none" stroke="#7595ff" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="305" cy="315" r="9" fill="#e9eef7"/>
+  <text x="560" y="265" fill="#8290a7" font-family="monospace" font-size="20" letter-spacing="5">STUDY POMODORO</text>
+  <text x="560" y="350" fill="#eef3fb" font-family="Georgia, serif" font-size="72">Focused minutes.</text>
+  <text x="560" y="420" fill="#eef3fb" font-family="Georgia, serif" font-size="72">Nothing else.</text>
+</svg>
