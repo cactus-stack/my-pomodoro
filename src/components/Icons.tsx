@@ -75,3 +75,29 @@ export function CourseIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function ChevronIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="m9 5 7 7-7 7" />
+    </IconBase>
+  );
+}
+
+export function SoundOnIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Z" />
+      <path d="M15 9.5a4 4 0 0 1 0 5M17.7 7a7.5 7.5 0 0 1 0 10" />
+    </IconBase>
+  );
+}
+
+export function SoundOffIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Z" />
+      <path d="m16 10 5 5M21 10l-5 5" />
+    </IconBase>
+  );
+}
