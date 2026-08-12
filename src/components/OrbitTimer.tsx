@@ -1,5 +1,6 @@
 import { PRESETS, getElapsedSessionMs, getPhaseElapsedMs } from "../lib/timer";
-import { formatClock, formatDuration } from "../lib/format";
+import { formatClock, formatDuration, formatElapsedClock } from "../lib/format";
+import { getOrbitPoint, getSegmentFillLength } from "../lib/orbit";
 import type { TimerState } from "../types";
 import { CheckIcon } from "./Icons";
 
@@ -16,7 +17,9 @@ export function OrbitTimer({ timer }: OrbitTimerProps) {
   const phase = preset.phases[timer.phaseIndex];
   const totalSeconds = preset.phases.reduce((sum, item) => sum + item.durationSeconds, 0);
   const elapsedMs = getElapsedSessionMs(timer);
+  const overallProgress = Math.min(1, elapsedMs / (totalSeconds * 1000));
   const phaseProgress = Math.min(1, getPhaseElapsedMs(timer) / (phase.durationSeconds * 1000));
+  const playhead = getOrbitPoint(overallProgress, radius, 180, 180);
 
   let cursor = 0;
   const segments = preset.phases.map((item, index) => {
@@ -52,7 +55,7 @@ export function OrbitTimer({ timer }: OrbitTimerProps) {
     >
       <svg className="orbit__svg" viewBox="0 0 360 360" role="presentation">
         <circle className="orbit__halo" cx="180" cy="180" r="171" />
-        {segments.map(({ item, index, start, length }) => (
+        {segments.map(({ item, start, length }) => (
           <circle
             key={`track-${item.id}`}
             className={`orbit__segment orbit__segment--track orbit__segment--${item.kind}`}
@@ -62,12 +65,11 @@ export function OrbitTimer({ timer }: OrbitTimerProps) {
             pathLength={circumference}
             strokeDasharray={`${Math.max(0, length - gap)} ${circumference - length + gap}`}
             strokeDashoffset={-start}
-            data-active={index === timer.phaseIndex}
           />
         ))}
-        {segments.map(({ item, index, start, length, fillRatio }) => {
-          const filled = Math.max(0, length * fillRatio - (fillRatio > 0 ? gap : 0));
-          return (
+        {segments.map(({ item, start, length, fillRatio }) => {
+          const filled = getSegmentFillLength(length, gap, fillRatio);
+          return filled > 0 ? (
             <circle
               key={`fill-${item.id}`}
               className={`orbit__segment orbit__segment--fill orbit__segment--${item.kind}`}
@@ -77,12 +79,18 @@ export function OrbitTimer({ timer }: OrbitTimerProps) {
               pathLength={circumference}
               strokeDasharray={`${filled} ${circumference - filled}`}
               strokeDashoffset={-start}
-              data-active={index === timer.phaseIndex}
             />
-          );
+          ) : null;
         })}
+        {timer.status === "active" && elapsedMs > 0 && (
+          <circle
+            className={`orbit__playhead orbit__playhead--${phase.kind}`}
+            cx={playhead.x}
+            cy={playhead.y}
+            r="4.8"
+          />
+        )}
         <circle className="orbit__inner-ring" cx="180" cy="180" r="119" />
-        <circle className="orbit__core" cx="180" cy="180" r="5" />
       </svg>
 
       <div className="orbit__content">
@@ -94,7 +102,7 @@ export function OrbitTimer({ timer }: OrbitTimerProps) {
         <strong className="orbit__time">{displayTime}</strong>
         <span className="orbit__label">{statusLabel}</span>
         {timer.status === "active" && (
-          <span className="orbit__focused">{formatDuration(timer.focusedMs / 1000)} focused</span>
+          <span className="orbit__focused">{formatElapsedClock(timer.focusedMs)} focused</span>
         )}
       </div>
 

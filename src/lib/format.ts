@@ -5,6 +5,13 @@ export function formatClock(milliseconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+export function formatElapsedClock(milliseconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 export function formatDuration(totalSeconds: number): string {
   const roundedMinutes = Math.round(totalSeconds / 60);
   const hours = Math.floor(roundedMinutes / 60);

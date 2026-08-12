@@ -101,3 +101,12 @@ export function SoundOffIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function FocusIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+      <path d="M16.5 4.5v3M15 6h3" />
+    </IconBase>
+  );
+}

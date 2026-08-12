@@ -577,12 +577,6 @@ main {
   stroke-width: 1;
 }
 
-.orbit__core {
-  fill: var(--paper);
-  opacity: 0.85;
-  filter: drop-shadow(0 0 0.55rem rgba(120, 149, 246, 0.9));
-}
-
 .orbit__segment {
   transform-origin: center;
   transition: stroke 450ms ease, opacity 450ms ease, stroke-dasharray 500ms linear;
@@ -591,11 +585,7 @@ main {
 .orbit__segment--track {
   stroke: #1a273a;
   stroke-width: 11;
-  stroke-linecap: round;
-}
-
-.orbit__segment--track[data-active="true"] {
-  stroke: #2a3d5c;
+  stroke-linecap: butt;
 }
 
 .orbit__segment--track.orbit__segment--break {
@@ -606,7 +596,7 @@ main {
 .orbit__segment--fill {
   stroke: var(--accent);
   stroke-width: 11;
-  stroke-linecap: round;
+  stroke-linecap: butt;
   filter: drop-shadow(0 0 0.4rem rgba(120, 149, 246, 0.48));
 }
 
@@ -614,6 +604,19 @@ main {
   stroke: #91a0b8;
   stroke-width: 6;
   filter: none;
+}
+
+.orbit__playhead {
+  fill: var(--accent-soft);
+  stroke: #dfe6ff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 0.45rem rgba(120, 149, 246, 0.85));
+}
+
+.orbit__playhead--break {
+  fill: #b9c3d3;
+  stroke: #edf1f7;
+  filter: drop-shadow(0 0 0.35rem rgba(185, 195, 211, 0.55));
 }
 
 .orbit__content {
@@ -1007,6 +1010,58 @@ main {
 .timer-panel__footer p span {
   color: var(--paper);
   font-family: var(--font-data);
+}
+
+.timer-panel__states {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.focus-sync {
+  display: inline-flex;
+  min-height: 2rem;
+  padding: 0.35rem 0.55rem;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: rgba(15, 23, 36, 0.72);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.focus-sync:hover {
+  border-color: var(--line-strong);
+  color: var(--paper);
+}
+
+.focus-sync svg {
+  width: 0.95rem;
+}
+
+.focus-sync i {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.focus-sync.is-enabled {
+  border-color: rgba(120, 149, 246, 0.34);
+  color: var(--accent-soft);
+}
+
+.focus-sync.is-enabled i {
+  background: var(--accent);
+}
+
+.focus-sync.is-active i {
+  box-shadow: 0 0 0.75rem rgba(120, 149, 246, 0.9);
 }
 
 .wake-state {
@@ -1836,8 +1891,9 @@ main {
     margin-top: 1rem;
   }
 
-  .wake-state {
+  .timer-panel__states {
     grid-row: 1;
+    flex-wrap: wrap;
   }
 
   .ledger {

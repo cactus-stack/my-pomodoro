@@ -8,6 +8,7 @@ import {
   CheckIcon,
   ChevronIcon,
   CourseIcon,
+  FocusIcon,
   PauseIcon,
   PlayIcon,
   PlusIcon,
@@ -18,6 +19,12 @@ import {
 import { useWakeLock } from "./hooks/useWakeLock";
 import { StudyAudio, loadSoundSettings, saveSoundSettings } from "./lib/audio";
 import { formatDuration, formatSessionDate, getTodaySeconds } from "./lib/format";
+import {
+  loadFocusSyncSettings,
+  runFocusShortcut,
+  saveFocusSyncSettings,
+  shouldUseStudyFocus,
+} from "./lib/focus";
 import { loadData, makeId, saveData } from "./lib/storage";
 import {
   PRESETS,
@@ -59,7 +66,9 @@ function App() {
   const [recentIndex, setRecentIndex] = useState(0);
   const [storageAvailable, setStorageAvailable] = useState(true);
   const [soundSettings, setSoundSettings] = useState(loadSoundSettings);
+  const [focusSyncSettings, setFocusSyncSettings] = useState(loadFocusSyncSettings);
   const audioRef = useRef<StudyAudio | null>(null);
+  const focusIntentRef = useRef<boolean | null>(null);
   const previousTimerRef = useRef({
     status: data.timer.status,
     phaseIndex: data.timer.phaseIndex,
@@ -79,6 +88,7 @@ function App() {
   const activeRecentSession = recentSessions[recentIndex] ?? null;
   const isIdle = data.timer.status === "idle";
   const wakeLockHeld = useWakeLock(data.timer.status === "active" && data.timer.isRunning);
+  const studyFocusWanted = shouldUseStudyFocus(data.timer);
 
   const courseStats = useMemo(
     () => [...data.courses].sort((a, b) => b.totalFocusedSeconds - a.totalFocusedSeconds),
@@ -93,6 +103,10 @@ function App() {
     audioRef.current?.configure(soundSettings);
     saveSoundSettings(soundSettings);
   }, [soundSettings]);
+
+  useEffect(() => {
+    saveFocusSyncSettings(focusSyncSettings);
+  }, [focusSyncSettings]);
 
   useEffect(() => {
     if (data.timer.status !== "active" || !data.timer.isRunning) return;
@@ -114,6 +128,30 @@ function App() {
       phaseIndex: data.timer.phaseIndex,
     };
   }, [data.timer.phaseIndex, data.timer.status, phase.kind]);
+
+  useEffect(() => {
+    const previousIntent = focusIntentRef.current;
+    focusIntentRef.current = studyFocusWanted;
+
+    if (!focusSyncSettings.enabled) return;
+
+    if (previousIntent === null) {
+      if (data.timer.status === "active") {
+        runFocusShortcut(studyFocusWanted ? "on" : "off", data.timer.remainingMs);
+      }
+      return;
+    }
+
+    if (previousIntent !== studyFocusWanted) {
+      runFocusShortcut(studyFocusWanted ? "on" : "off", data.timer.remainingMs);
+    }
+  }, [
+    data.timer.phaseIndex,
+    data.timer.remainingMs,
+    data.timer.status,
+    focusSyncSettings.enabled,
+    studyFocusWanted,
+  ]);
 
   useEffect(() => {
     if (data.timer.status === "active") {
@@ -238,13 +276,16 @@ function App() {
     audioRef.current?.play("start");
     setConfirmDiscard(false);
     setNote("");
+    const firstPhaseMs = PRESETS[data.timer.presetId].phases[0].durationSeconds * 1000;
     setData((current) => ({
       ...current,
       timer: startTimer(current.timer.presetId, selectedCourse.id, Date.now()),
     }));
+    requestStudyFocus(true, firstPhaseMs);
   }
 
   function togglePause() {
+    const nextFocusWanted = !data.timer.isRunning && phase.kind === "focus";
     audioRef.current?.play(data.timer.isRunning ? "pause" : "resume");
     setData((current) => ({
       ...current,
@@ -252,14 +293,22 @@ function App() {
         ? pauseTimer(current.timer, Date.now())
         : resumeTimer(current.timer, Date.now()),
     }));
+    if (nextFocusWanted !== studyFocusWanted) {
+      requestStudyFocus(nextFocusWanted, data.timer.remainingMs);
+    }
   }
 
   function handleSkipBreak() {
+    const nextPhase = preset.phases[data.timer.phaseIndex + 1];
     setData((current) => ({ ...current, timer: skipBreak(current.timer, Date.now()) }));
+    if (nextPhase?.kind === "focus") {
+      requestStudyFocus(true, nextPhase.durationSeconds * 1000);
+    }
   }
 
   function handleFinishEarly() {
     setData((current) => ({ ...current, timer: finishEarly(current.timer, Date.now()) }));
+    if (canFinishEarly(data.timer) && studyFocusWanted) requestStudyFocus(false);
   }
 
   function discardSession() {
@@ -268,6 +317,7 @@ function App() {
     setNote("");
     setConfirmDiscard(false);
     setMessage("Session discarded.");
+    requestStudyFocus(false, undefined, false);
   }
 
   function finishSession() {
@@ -353,6 +403,46 @@ function App() {
 
   function changeVolume(value: number) {
     setSoundSettings((current) => ({ ...current, volume: Math.min(1, Math.max(0, value)) }));
+  }
+
+  function requestStudyFocus(active: boolean, remainingMs?: number, notify = true) {
+    focusIntentRef.current = active;
+    if (!focusSyncSettings.enabled) return;
+
+    const requested = runFocusShortcut(active ? "on" : "off", remainingMs);
+    if (notify) {
+      setMessage(
+        requested
+          ? `Study Focus ${active ? "activation" : "deactivation"} requested.`
+          : "This browser could not open the Study Focus shortcut.",
+      );
+    }
+  }
+
+  function toggleFocusSync() {
+    const nextEnabled = !focusSyncSettings.enabled;
+    setFocusSyncSettings({ enabled: nextEnabled });
+    focusIntentRef.current = studyFocusWanted;
+
+    if (nextEnabled) {
+      if (data.timer.status === "active") {
+        const requested = runFocusShortcut(
+          studyFocusWanted ? "on" : "off",
+          data.timer.remainingMs,
+        );
+        setMessage(
+          requested
+            ? "Study Focus sync enabled and current phase requested."
+            : "Focus sync enabled, but this browser could not open Shortcuts.",
+        );
+      } else {
+        setMessage("Study Focus sync enabled.");
+      }
+      return;
+    }
+
+    if (studyFocusWanted) runFocusShortcut("off");
+    setMessage("Study Focus sync disabled.");
   }
 
   function moveRecent(direction: -1 | 1) {
@@ -551,9 +641,22 @@ function App() {
 
             <footer className="timer-panel__footer">
               <p><span>45m</span> is valid. <span>90m</span> is the target, never a punishment.</p>
-              <span className={wakeLockHeld ? "wake-state is-active" : "wake-state"}>
-                <i /> {wakeLockHeld ? "Screen awake" : `${preset.focusMinutes}m focus · ${preset.totalMinutes}m real`}
-              </span>
+              <div className="timer-panel__states">
+                <button
+                  className={`focus-sync ${focusSyncSettings.enabled ? "is-enabled" : ""} ${studyFocusWanted ? "is-active" : ""}`}
+                  type="button"
+                  onClick={toggleFocusSync}
+                  aria-pressed={focusSyncSettings.enabled}
+                  title="Synchronize the macOS Study Focus through Apple Shortcuts"
+                >
+                  <FocusIcon />
+                  <span>{focusSyncSettings.enabled ? "Study sync on" : "Study sync off"}</span>
+                  <i />
+                </button>
+                <span className={wakeLockHeld ? "wake-state is-active" : "wake-state"}>
+                  <i /> {wakeLockHeld ? "Screen awake" : `${preset.focusMinutes}m focus · ${preset.totalMinutes}m real`}
+                </span>
+              </div>
             </footer>
           </section>
 
