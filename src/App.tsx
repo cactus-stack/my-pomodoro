@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { OrbitTimer } from "./components/OrbitTimer";
 import {
-  ArrowIcon,
   CheckIcon,
   ChevronIcon,
   CourseIcon,
@@ -39,19 +35,7 @@ import {
 } from "./lib/timer";
 import type { AppData, Course, PresetId, StudySession } from "./types";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-const principleWords = "A good session is measured by the attention you protected, not the pages you crossed.".split(" ");
-const marqueePhrases = [
-  "focused minutes over lesson counts",
-  "a partial session still counts",
-  "pause to think",
-  "review the error",
-  "protect the next block",
-];
-
 function App() {
-  const appRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<AppData>(() => {
     const stored = loadData();
     return stored.timer.status === "active" && stored.timer.isRunning
@@ -175,83 +159,6 @@ function App() {
   useEffect(() => {
     if (recentIndex > Math.max(0, recentSessions.length - 1)) setRecentIndex(0);
   }, [recentIndex, recentSessions.length]);
-
-  useGSAP(
-    () => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-      gsap.from(".topbar > *", {
-        y: -16,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.08,
-        ease: "power3.out",
-      });
-      gsap.from(".timer-panel__intro > *", {
-        y: 24,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.09,
-        ease: "power3.out",
-        delay: 0.12,
-      });
-      gsap.from(".ledger", {
-        x: 24,
-        opacity: 0,
-        duration: 0.9,
-        ease: "power3.out",
-        delay: 0.2,
-      });
-      gsap.fromTo(
-        ".timer-stage__instrument",
-        { scale: 0.88, opacity: 0.45 },
-        {
-          scale: 1,
-          opacity: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: ".timer-panel",
-            start: "top 92%",
-            end: "top 28%",
-            scrub: 0.7,
-          },
-        },
-      );
-      gsap.fromTo(
-        ".principle__word",
-        { opacity: 0.12, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          stagger: 0.08,
-          ease: "none",
-          scrollTrigger: {
-            trigger: ".principle",
-            start: "top 78%",
-            end: "bottom 74%",
-            scrub: 0.8,
-          },
-        },
-      );
-    },
-    { scope: appRef },
-  );
-
-  useGSAP(
-    () => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      gsap.fromTo(
-        ".orbit__content > *",
-        { y: 8, opacity: 0.25 },
-        { y: 0, opacity: 1, duration: 0.48, stagger: 0.045, ease: "power3.out" },
-      );
-    },
-    {
-      scope: appRef,
-      dependencies: [data.timer.phaseIndex, data.timer.status],
-      revertOnUpdate: true,
-    },
-  );
 
   function choosePreset(presetId: PresetId) {
     if (!isIdle) return;
@@ -452,7 +359,7 @@ function App() {
   }
 
   return (
-    <div ref={appRef} className="app-shell">
+    <div className="app-shell">
       <div className="ambient ambient--one" />
       <div className="ambient ambient--two" />
 
@@ -461,7 +368,7 @@ function App() {
           <span className="brand__mark"><span /></span>
           <span>
             <strong>Study Pomodoro</strong>
-            <small>Attention instrument</small>
+            <small>Personal study timer</small>
           </span>
         </a>
 
@@ -514,11 +421,10 @@ function App() {
         <div className="workspace">
           <section className="timer-panel" aria-labelledby="timer-heading">
             <header className="timer-panel__intro">
-              <p className="intro-line">Focused minutes, not lesson counts.</p>
-              <h1 id="timer-heading">
-                <span>Guard your attention.</span>
-                <em>Track the minutes.</em>
-              </h1>
+              <div>
+                <p className="intro-line">Current session</p>
+                <h1 id="timer-heading">Focus timer</h1>
+              </div>
               <div className="course-chip" title={timerCourse?.name ?? "No course selected"}>
                 <CourseIcon />
                 <span>{timerCourse?.name ?? "Choose a course"}</span>
@@ -573,7 +479,6 @@ function App() {
                     <button className="primary-action" type="button" onClick={beginSession}>
                       <PlayIcon />
                       Start {preset.name.toLowerCase()} session
-                      <ArrowIcon className="primary-action__arrow" />
                     </button>
                   ) : (
                     <>
@@ -640,7 +545,6 @@ function App() {
             </div>
 
             <footer className="timer-panel__footer">
-              <p><span>45m</span> is valid. <span>90m</span> is the target, never a punishment.</p>
               <div className="timer-panel__states">
                 <button
                   className={`focus-sync ${focusSyncSettings.enabled ? "is-enabled" : ""} ${studyFocusWanted ? "is-active" : ""}`}
@@ -663,8 +567,8 @@ function App() {
           <aside className="ledger" aria-labelledby="courses-heading">
             <header className="ledger__header">
               <div>
-                <p className="section-intro">Choose the work</p>
-                <h2 id="courses-heading">Course desk</h2>
+                <p className="section-intro">Library</p>
+                <h2 id="courses-heading">Courses</h2>
               </div>
               <button
                 className="icon-button"
@@ -727,8 +631,8 @@ function App() {
             <section className="recent" aria-labelledby="recent-heading">
               <div className="recent__heading">
                 <div>
-                  <p className="section-intro">What moved</p>
-                  <h3 id="recent-heading">Recent focus</h3>
+                  <p className="section-intro">History</p>
+                  <h3 id="recent-heading">Recent sessions</h3>
                 </div>
                 <div className="carousel-controls" aria-label="Browse recent sessions">
                   <button
@@ -768,47 +672,14 @@ function App() {
               ) : (
                 <div className="empty-state">
                   <span className="empty-state__orbit"><i /></span>
-                  <p>Your first focused block will appear here.</p>
-                  <small>Time is the metric. Progress is the side effect.</small>
+                  <p>No completed sessions yet.</p>
+                  <small>Your latest session will appear here.</small>
                 </div>
               )}
             </section>
-
-            <blockquote className="ledger-quote">
-              The timer measures how long you studied, not how much you should have finished.
-            </blockquote>
           </aside>
-        </div>
-
-        <section className="principle" aria-labelledby="principle-heading">
-          <div>
-            <p className="section-intro">The rule that matters</p>
-            <h2 id="principle-heading">
-              {principleWords.map((word, index) => (
-                <span className="principle__word" key={`${word}-${index}`}>{word}{" "}</span>
-              ))}
-            </h2>
-          </div>
-          <aside>
-            <strong>45</strong>
-            <span>minutes</span>
-            <p>A minimum valid session. Stop turning a hard day into a failed day.</p>
-          </aside>
-        </section>
-
-        <div className="principle-marquee" aria-hidden="true">
-          {[0, 1].map((track) => (
-            <div key={track}>
-              {marqueePhrases.map((phrase) => <span key={`${track}-${phrase}`}>{phrase}<i /></span>)}
-            </div>
-          ))}
         </div>
       </main>
-
-      <footer className="app-footer">
-        <span>Study Pomodoro</span>
-        <span>Local-first · no accounts · no lesson quotas</span>
-      </footer>
 
       {message && <div className="toast" role="status">{message}</div>}
     </div>

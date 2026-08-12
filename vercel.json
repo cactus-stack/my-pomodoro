@@ -14,7 +14,7 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' https://api.fontshare.com; style-src-attr 'unsafe-inline'; font-src 'self' https://cdn.fontshare.com; img-src 'self' data:; connect-src 'self' https://api.fontshare.com https://cdn.fontshare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     }
